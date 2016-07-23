@@ -52,14 +52,31 @@ class PostRepository implements PostRepositoryInterface
      */
     public function findPost($id)
     {
-        // TODO: Implement findPost() method.
-        if(!isset($this->data[$id])){
-            throw new \DomainException(sprintf('Post by id "%s" not found',$id));
+        $sql       = new Sql($this->db);
+        $select    = $sql->select('posts');
+        $select->where(['id = ?' => $id]);
+
+        $statement = $sql->prepareStatementForSqlObject($select);
+        $result    = $statement->execute();
+
+        if (! $result instanceof ResultInterface || ! $result->isQueryResult()) {
+            throw new RuntimeException(sprintf(
+                'Failed retrieving blog post with identifier "%s"; unknown database error.',
+                $id
+            ));
         }
-        return new Post(
-                $this->data["id"]["title"],
-                $this->data["id"]["text"],
-                $this->data["id"]["id"]
-            );
+
+        $resultSet = new HydratingResultSet($this->hydrator, $this->postPrototype);
+        $resultSet->initialize($result);
+        $post = $resultSet->current();
+
+        if (! $post) {
+            throw new InvalidArgumentException(sprintf(
+                'Blog post with identifier "%s" not found.',
+                $id
+            ));
+        }
+
+        return $post;
     }
 }

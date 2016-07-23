@@ -47,7 +47,7 @@ return [
             //Model\PostRepositoryInterface::class => InvokableFactory::class,
             Model\PostRepository::class => InvokableFactory::class,
             //add this line,
-            Model\ZendDbSqlRepository::class => Model\ZendDbSqlRepositoryFactory::class,
+            Model\ZendDbSqlRepository::class => \Blog\Factory\ZendDbSqlRepositoryFactory::class,
         ],
     ],
 

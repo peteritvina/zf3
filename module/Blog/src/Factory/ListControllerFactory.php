@@ -14,7 +14,7 @@ class ListControllerFactory implements FactoryInterface{
   * $return: ListController
   */   
     public function __invoke(ContainerInterface $container, $requestedName, array $options = NULL){
-        echo get_class($container->get(\Blog\Model\PostRepositoryInterface::class));
+
         return new ListController($container->get(\Blog\Model\PostRepositoryInterface::class));
     }
     public function createService(ServiceLocatorInterface $serviceLocator){

@@ -5,10 +5,12 @@ namespace Blog\Model;
 
 use InvalidArgumentException;
 use RuntimeException;
+// Replace the import of the Reflection hydrator with this:
+use Zend\Hydrator\HydratorInterface;
 use Zend\Db\Adapter\AdapterInterface;
-use Zend\Db\Sql\Sql;
 use Zend\Db\Adapter\Driver\ResultInterface;
-use Zend\Db\ResultSet\ResultSet;
+use Zend\Db\ResultSet\HydratingResultSet;
+use Zend\Db\Sql\Sql;
 class ZendDbSqlRepository implements PostRepositoryInterface
 {
     /**
@@ -19,9 +21,16 @@ class ZendDbSqlRepository implements PostRepositoryInterface
     /**
      * @param AdapterInterface $db
      */
-    public function __construct(AdapterInterface $db)
-    {
+    private $hydrator;
+    private $postPrototype;
+    public function __construct(
+        AdapterInterface $db,
+        HydratorInterface $hydrator,
+        Post $postPrototype
+    ){
         $this->db = $db;
+        $this->hydrator = $hydrator;
+        $this->postPrototype = $postPrototype;
     }
 
     /**
@@ -29,18 +38,21 @@ class ZendDbSqlRepository implements PostRepositoryInterface
      */
     public function findAllPosts()
     {
-        $sql    = new Sql($this->db);
-        $select = $sql->select('posts');
-        $stmt   = $sql->prepareStatementForSqlObject($select);
-        $result = $stmt->execute();
-        if ($result instanceof ResultInterface && $result->isQueryResult()) {
-            $resultSet = new ResultSet();
-            $resultSet->initialize($result);
-            var_export($resultSet);
-            die();
+        $sql       = new Sql($this->db);
+        $select    = $sql->select('posts');
+        $statement = $sql->prepareStatementForSqlObject($select);
+        $result    = $statement->execute();
+
+        if (! $result instanceof ResultInterface || ! $result->isQueryResult()) {
+            return [];
         }
-        die();
-        return $result;
+
+        $resultSet = new HydratingResultSet(
+            $this->hydrator,
+            $this->postPrototype
+        );
+        $resultSet->initialize($result);
+        return $resultSet;
     }
 
     /**
